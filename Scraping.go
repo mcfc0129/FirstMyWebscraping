@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/csv"
+	"html/template"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -12,6 +15,40 @@ import (
 type feild struct {
 	id  int
 	url string
+}
+
+func main() {
+	serve := http.Server{
+		Addr: ":8080",
+	}
+	http.HandleFunc("/", SearchFrom)
+	http.HandleFunc("/ok", okPage)
+
+	serve.ListenAndServe()
+	// url := "https://search.yahoo.co.jp/image/search?p=%E3%82%B7%E3%83%9C%E3%83%AC%E3%83%BC%E3%82%AB%E3%83%9E%E3%83%AD&oq=%E3%82%B7%E3%83%9C%E3%83%AC%E3%83%BC&ei=UTF-8&b="
+	// a := fordeal(url)
+	// b := GetPage(a)
+	// EncodingCSV(b, "Camaro.csv")
+}
+
+func SearchFrom(w http.ResponseWriter, r *http.Request) {
+	t, _ := template.ParseFiles("html/Search.html")
+	t.Execute(w, nil)
+}
+
+func okPage(w http.ResponseWriter, r *http.Request) {
+	Searches := r.FormValue("Search")
+	file := r.FormValue("filename")
+	filename := file + ".csv"
+	URLencode := url.QueryEscape(Searches)
+	url := "https://search.yahoo.co.jp/image/search?p=" + URLencode + "&op=&ei=UTF-8&b="
+
+	a := fordeal(url)
+	data := GetPage(a)
+	EncodingCSV(data, filename)
+
+	t, _ := template.ParseFiles("html/ok.html")
+	t.Execute(w, nil)
 }
 
 func fordeal(url string) []string {
@@ -59,11 +96,4 @@ func EncodingCSV(data []feild, filename string) {
 		}
 	}
 	write.Flush()
-}
-
-func main() {
-	url := "https://search.yahoo.co.jp/image/search?p=%E3%82%B7%E3%83%9C%E3%83%AC%E3%83%BC%E3%82%AB%E3%83%9E%E3%83%AD&oq=%E3%82%B7%E3%83%9C%E3%83%AC%E3%83%BC&ei=UTF-8&b="
-	a := fordeal(url)
-	b := GetPage(a)
-	EncodingCSV(b, "Camaro.csv")
 }
